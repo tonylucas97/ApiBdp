@@ -8,14 +8,14 @@ const multer = require("multer");
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const storage = multer.diskStorage({
-    destination: (req,file,cb) => {
-        cb(null,"./uploads/")
+    destination: (req, file, cb) => {
+        cb(null, "./uploads/")
     },
-    filename: (req,file,cb) => {
-        cb(null,`${+Date.now()}-${file.originalname}`)
+    filename: (req, file, cb) => {
+        cb(null, `${+Date.now()}-${file.originalname}`)
     }
 })
-const upload = multer({storage: storage})
+const upload = multer({ storage: storage })
 const fs = require("fs")
 
 Router.get("/", async (req, res) => {
@@ -23,7 +23,7 @@ Router.get("/", async (req, res) => {
     res.json({ success: true, mercadorias: mercadorias })
 })
 
-Router.get('/busca/:nome/:token',autenticacao, async (req, res) => {
+Router.get('/busca/:nome/:token', autenticacao, async (req, res) => {
     try {
         const mercadoria = await Mercadoria.findAll({ where: { nome: { [Op.like]: req.params.nome + '%' } } });
         res.json({ mercadorias: mercadoria, success: true })
@@ -45,7 +45,7 @@ Router.get("/porid", async (req, res) => {
     }
 })
 
-Router.get("/porcodigo", async (req,res) => {
+Router.get("/porcodigo", async (req, res) => {
     try {
         const mercadoria = await Mercadoria.findOne({ where: { codigoBarras: req.query.codigoBarras } });
         if (mercadoria) {
@@ -60,47 +60,54 @@ Router.get("/porcodigo", async (req,res) => {
 
 Router.get("/limite", async (req, res) => {
     const mercadorias = await sequelize.query("SELECT * FROM mercadorias LIMIT 10 OFFSET " + req.query.pulos);
-    res.json({mercadorias:mercadorias})
+    res.json({ mercadorias: mercadorias })
 })
 
-Router.post("/", autenticacao ,upload.single("img"), async (req, res) => {
-    try {
-        if (req.file) {
-            const mercadoria = await Mercadoria.create({ nome: req.body.nome, precoCompra: req.body.precoCompra, precoVenda: req.body.precoVenda, nomeImg: req.file.filename ,codigoBarras:req.body.codigoBarras});
-            if (mercadoria) {
-                res.json({ success: true, mercadoria: mercadoria })
+Router.post("/", autenticacao, upload.single("img"), async (req, res) => {
+    const isMercadoria = await Mercadoria.findOne({ where: { codigoBarras: req.body.codigoBarras} })
+
+    if(!isMercadoria){
+        try {
+            if (req.file) {
+                const mercadoria = await Mercadoria.create({ nome: req.body.nome, precoCompra: req.body.precoCompra, precoVenda: req.body.precoVenda, nomeImg: req.file.filename, codigoBarras: req.body.codigoBarras });
+                if (mercadoria) {
+                    res.json({ success: true, mercadoria: mercadoria })
+                } else {
+                    res.json({ success: false })
+                }
             } else {
-                res.json({ success: false })
+                const mercadoria = await Mercadoria.create({ nome: req.body.nome, precoCompra: req.body.precoCompra, precoVenda: req.body.precoVenda, codigoBarras: req.body.codigoBarras });
+                if (mercadoria) {
+                    res.json({ success: true, mercadoria: mercadoria })
+                } else {
+                    res.json({ success: false })
+                }
             }
-        } else {
-            const mercadoria = await Mercadoria.create({ nome: req.body.nome, precoCompra: req.body.precoCompra, precoVenda: req.body.precoVenda ,codigoBarras:req.body.codigoBarras});
-            if (mercadoria) {
-                res.json({ success: true, mercadoria: mercadoria })
-            } else {
-                res.json({ success: false })
-            }
+        } catch (error) {
+            res.json({ erro: error.message })
         }
-    } catch (error) {
-        res.json({erro:error.message})
+    }else{
+        res.json({ success:false,message:"Produto ja cadastrado" })
     }
+    
 
 })
 
-Router.post("/Addphoto", upload.single("img"), async (req,res) => {
+Router.post("/Addphoto", upload.single("img"), async (req, res) => {
     console.log(req.file)
 })
 
 Router.post("/alterarItem", upload.single("img"), async (req, res) => {
     if (req.file) {
-        const mercadoria = await Mercadoria.findOne({where:{id:req.body.id}});
-        if(mercadoria){
-            if(mercadoria.nomeImg){
+        const mercadoria = await Mercadoria.findOne({ where: { id: req.body.id } });
+        if (mercadoria) {
+            if (mercadoria.nomeImg) {
                 fs.unlinkSync("uploads/" + mercadoria.nomeImg)
             }
             const mercadoriaUpdate = await mercadoria.update({
-                nome:req.body.nome,
-                precoCompra:req.body.precoCompra,
-                precoVenda:req.body.precoVenda,
+                nome: req.body.nome,
+                precoCompra: req.body.precoCompra,
+                precoVenda: req.body.precoVenda,
                 nomeImg: req.file.filename
             })
             if (mercadoriaUpdate) {
@@ -109,23 +116,23 @@ Router.post("/alterarItem", upload.single("img"), async (req, res) => {
                 res.json({ success: false })
             }
         }
-        
+
     } else {
-        const mercadoria = await Mercadoria.findOne({where:{id:req.body.id}});
-        if(mercadoria){
+        const mercadoria = await Mercadoria.findOne({ where: { id: req.body.id } });
+        if (mercadoria) {
             const mercadoriaUpdate = await mercadoria.update({
-                nome:req.body.nome,
-                precoCompra:req.body.precoCompra,
-                precoVenda:req.body.precoVenda,
+                nome: req.body.nome,
+                precoCompra: req.body.precoCompra,
+                precoVenda: req.body.precoVenda,
                 nomeImg: req.body.nomeImg
             })
             if (mercadoriaUpdate) {
-            res.json({ success: true, message: "Item alterado com sucesso" })
-        } else {
-            res.json({ success: false })
+                res.json({ success: true, message: "Item alterado com sucesso" })
+            } else {
+                res.json({ success: false })
+            }
         }
-        }
-        
+
     }
 })
 
