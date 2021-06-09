@@ -58,6 +58,19 @@ Router.get("/porcodigo", async (req, res) => {
     }
 })
 
+Router.get("/porcodigolike", async (req, res) => {
+    try {
+        const mercadoria = await Mercadoria.findAll({ where: { codigoBarras: { [Op.like]: req.query.codigoBarras + '%' } } })
+        if (mercadoria) {
+            res.json({ sucess: true, mercadoria: mercadoria })
+        } else {
+            res.json({ success: false })
+        }
+    } catch (error) {
+        res.json({ erro: error })
+    }
+})
+
 Router.get("/limite", async (req, res) => {
     const mercadorias = await sequelize.query("SELECT * FROM mercadorias LIMIT 10 OFFSET " + req.query.pulos);
     res.json({ mercadorias: mercadorias })
