@@ -4,27 +4,8 @@ const Mercadoria = require("../models/Mercadoria");
 const autenticacao = require("../config/Autenticacao");
 const sequelize = require("../config/database");
 const { QueryTypes } = require('sequelize');
-const multer = require("multer");
-const aws = require("aws-sdk")
-const multerS3 = require('multer-s3')
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-
-const s3 = aws.S3({});
-
-const upload = multer({
-    storage: multerS3({
-        se: s3,
-        acl: 'public-read',
-        bucket: "baldosplasticosimgs",
-        metadata: function (req, file, cb) {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: function (req, file, cb) {
-            cb(null, Date.now().toString())
-        }
-    })
-})
 
 const fs = require("fs")
 
@@ -86,7 +67,7 @@ Router.get("/limite", async (req, res) => {
     res.json({ mercadorias: mercadorias })
 })
 
-Router.post("/", autenticacao, upload.single("img"), async (req, res) => {
+Router.post("/", autenticacao, async (req, res) => {
     const isMercadoria = await Mercadoria.findOne({ where: { codigoBarras: req.body.codigoBarras } })
 
     if (!isMercadoria) {
