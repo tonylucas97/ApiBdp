@@ -7,6 +7,9 @@ const { QueryTypes } = require('sequelize');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
+var multer  = require('multer')
+var upload = multer({ dest: 'uploads/' })
+
 const fs = require("fs")
 
 Router.get("/", async (req, res) => {
@@ -67,7 +70,7 @@ Router.get("/limite", async (req, res) => {
     res.json({ mercadorias: mercadorias })
 })
 
-Router.post("/", autenticacao, async (req, res) => {
+Router.post("/", autenticacao, upload.single("img"),async (req, res) => {
     const isMercadoria = await Mercadoria.findOne({ where: { codigoBarras: req.body.codigoBarras } })
 
     if (!isMercadoria) {
