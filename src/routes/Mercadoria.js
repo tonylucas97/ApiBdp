@@ -5,17 +5,27 @@ const autenticacao = require("../config/Autenticacao");
 const sequelize = require("../config/database");
 const { QueryTypes } = require('sequelize');
 const multer = require("multer");
+const aws = require("aws-sdk")
+const multerS3 = require('multer-s3')
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "./uploads/")
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${+Date.now()}-${file.originalname}`)
-    }
+
+const s3 = aws.S3({});
+
+const upload = multer({
+    storage: multerS3({
+        se: s3,
+        acl: 'public-read',
+        bucket: "baldosplasticosimgs",
+        metadata: function (req, file, cb) {
+            cb(null, { fieldName: file.fieldname });
+        },
+        key: function (req, file, cb) {
+            cb(null, Date.now().toString())
+        }
+    })
 })
-const upload = multer({ storage: storage })
+
 const fs = require("fs")
 
 Router.get("/", async (req, res) => {
@@ -77,9 +87,9 @@ Router.get("/limite", async (req, res) => {
 })
 
 Router.post("/", autenticacao, upload.single("img"), async (req, res) => {
-    const isMercadoria = await Mercadoria.findOne({ where: { codigoBarras: req.body.codigoBarras} })
+    const isMercadoria = await Mercadoria.findOne({ where: { codigoBarras: req.body.codigoBarras } })
 
-    if(!isMercadoria){
+    if (!isMercadoria) {
         try {
             if (req.file) {
                 const mercadoria = await Mercadoria.create({ nome: req.body.nome, precoCompra: req.body.precoCompra, precoVenda: req.body.precoVenda, nomeImg: req.file.filename, codigoBarras: req.body.codigoBarras });
@@ -99,10 +109,10 @@ Router.post("/", autenticacao, upload.single("img"), async (req, res) => {
         } catch (error) {
             res.json({ erro: error.message })
         }
-    }else{
-        res.json({ success:false,message:"Produto ja cadastrado" })
+    } else {
+        res.json({ success: false, message: "Produto ja cadastrado" })
     }
-    
+
 
 })
 
