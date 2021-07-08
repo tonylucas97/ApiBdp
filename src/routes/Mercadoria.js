@@ -9,11 +9,10 @@ const Op = Sequelize.Op;
 const multerS3 = require('multer-s3')
 const aws = require("aws-sdk")
 var multer  = require('multer')
-var upload = multer({ dest: 'uploads/' })
 
 const fs = require("fs")
 
-const s3 = aws.S3({
+let s3 = aws.S3({
     accessKeyId: " AKIA3TQRZUHFMPYW2IU3",
     secretAccessKey: " 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"
 })
